@@ -1,0 +1,23 @@
+build/
+install/
+log/
+output/
+
+*.engine
+*.profile
+**/trt_cache/
+*.timing
+
+# Model training and generated deployment artifacts.  Portable runtime ONNX
+# models live only under onxx/ and may be managed with Git LFS.
+models_tools/weights/
+models_tools/artifacts/
+
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.vscode/
+.idea/
+.DS_Store
+*.swp
+compile_commands.json

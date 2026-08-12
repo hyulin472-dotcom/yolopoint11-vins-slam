@@ -1,0 +1,63 @@
+project_root: ../..
+exporter: fast_foundationstereo
+
+source:
+  root: "${FAST_FOUNDATIONSTEREO_ROOT:-../Fast-FoundationStereo}"
+  checkpoint: models_tools/weights/fast_foundationstereo/model_best_bp2_serialize.pth
+  export_module: scripts/make_single_onnx.py
+
+# The original serialized checkpoint is not present in this workspace. Set
+# FAST_FOUNDATIONSTEREO_CHECKPOINT before prepare_weights.py when it is available.
+weights:
+  - name: fast_foundationstereo_serialized
+    source: "${FAST_FOUNDATIONSTEREO_CHECKPOINT:-}"
+    destination: models_tools/weights/fast_foundationstereo/model_best_bp2_serialize.pth
+
+export:
+  device: cuda
+
+onnx:
+  opset: 17
+  precision: fp32
+
+tensorrt:
+  precision: fp16
+  workspace_mib: 4096
+  builder_optimization_level: 3
+  log_level: warning
+
+components:
+  stereo:
+    onnx_path: onxx/fast_foundationstereo/20_30_48_iters_4_res_320x736.onnx
+    reference_onnx: onxx/fast_foundationstereo/20_30_48_iters_4_res_320x736.onnx
+    # Allows TensorRT generation even when the original serialized PyTorch
+    # checkpoint is unavailable. prepare_prebuilt.py verifies before copying.
+    prebuilt_onnx:
+      source: onxx/fast_foundationstereo/20_30_48_iters_4_res_320x736.onnx
+      sha256: 30a057d15959be17f06163445614242c00bc00b2ac01a4ef0f62aedcda969758
+    input_size: [320, 736]
+    valid_iters: 4
+    max_disp: 192
+    # make_single_onnx.py strips normalization from the graph, so callers must
+    # apply these ImageNet statistics to RGB float values in [0,255].
+    normalization: imagenet_0_255
+    normalization_mean: [123.675, 116.28, 103.53]
+    normalization_std: [58.395, 57.12, 57.375]
+    opset: 17
+    tensorrt:
+      precision: fp16
+      engine_path: onxx/fast_foundationstereo/trt_cache/standalone/20_30_48_iters_4_res_320x736_fp16.engine
+      ort_cache_path: onxx/fast_foundationstereo/trt_cache/320x736_fp16
+      profiles:
+        min:
+          left_image: [1, 3, 320, 736]
+          right_image: [1, 3, 320, 736]
+        opt:
+          left_image: [1, 3, 320, 736]
+          right_image: [1, 3, 320, 736]
+        max:
+          left_image: [1, 3, 320, 736]
+          right_image: [1, 3, 320, 736]
+        compare:
+          left_image: [1, 3, 320, 736]
+          right_image: [1, 3, 320, 736]

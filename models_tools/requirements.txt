@@ -1,0 +1,7 @@
+numpy
+onnx>=1.17
+onnxruntime-gpu>=1.22
+omegaconf>=2.3
+PyYAML>=6
+torch>=2.1
+tensorrt>=10

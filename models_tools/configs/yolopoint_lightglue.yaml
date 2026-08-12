@@ -1,0 +1,115 @@
+project_root: ../..
+exporter: yolopoint_lightglue
+
+source:
+  root: "${GLUE_FACTORY_ROOT:-../glue-factory}"
+  checkpoint: models_tools/weights/yolopoint_lightglue/checkpoint_best.tar
+  extractor_weights: models_tools/weights/yolopoint_lightglue/yolopointv11_s_coco_56_827961_ckpt.pth.tar
+
+weights:
+  - name: trained_yolopoint_lightglue
+    source: "${GLUE_FACTORY_ROOT:-../glue-factory}/outputs/training/yolopointv11+lg_homography/checkpoint_best.tar"
+    destination: models_tools/weights/yolopoint_lightglue/checkpoint_best.tar
+    sha256: 49ab00661b8c4171712b72d120955e7928917e5fb94babf2545af888530d5fda
+  - name: yolopointv11_initialization
+    source: "${GLUE_FACTORY_ROOT:-../glue-factory}/YOLOPoint/weights/yolopointv11_s_coco_56_827961_ckpt.pth.tar"
+    destination: models_tools/weights/yolopoint_lightglue/yolopointv11_s_coco_56_827961_ckpt.pth.tar
+    sha256: 04c19b7afd16000b59d611277e9345a131c74dfeacdb603c2bc5dac296fc2294
+
+onnx:
+  opset: 17
+  precision: fp32
+
+tensorrt:
+  precision: fp16
+  workspace_mib: 4096
+  builder_optimization_level: 3
+  log_level: warning
+
+components:
+  extractor:
+    onnx_path: onxx/yolopointv11_lightglue/yolopointv11_extractor.onnx
+    reference_onnx: onxx/yolopointv11_lightglue/yolopointv11_extractor.onnx
+    input_size: [480, 752]
+    dynamic_spatial: true
+    opset: 17
+    tensorrt:
+      precision: fp16
+      engine_path: onxx/yolopointv11_lightglue/trt_cache/standalone/yolopointv11_extractor_fp16.engine
+      ort_cache_path: onxx/yolopointv11_lightglue/trt_cache/extractor
+      profiles:
+        min:
+          image: [1, 3, 480, 752]
+        opt:
+          image: [1, 3, 480, 752]
+        max:
+          image: [1, 3, 480, 752]
+        compare:
+          image: [1, 3, 480, 752]
+
+  full_extractor:
+    onnx_path: onxx/yolopointv11_lightglue/yolopointv11_full.onnx
+    input_size: [480, 768]
+    dynamic_spatial: true
+    opset: 17
+    num_classes: 80
+    normalization: zero_to_one
+    tensorrt:
+      precision: fp16
+      engine_path: onxx/yolopointv11_lightglue/trt_cache/standalone/yolopointv11_full_fp16.engine
+      ort_cache_path: onxx/yolopointv11_lightglue/trt_cache/full_extractor_dynamic
+      profiles:
+        min:
+          image: [1, 3, 384, 768]
+        opt:
+          image: [1, 3, 480, 768]
+        max:
+          image: [1, 3, 480, 1248]
+        compare:
+          image: [1, 3, 480, 768]
+
+  lightglue:
+    onnx_path: onxx/yolopointv11_lightglue/yolopointv11_lightglue.onnx
+    reference_onnx: onxx/yolopointv11_lightglue/yolopointv11_lightglue.onnx
+    descriptor_dim: 128
+    image_size: [480, 752]
+    example_keypoints: 256
+    dynamic: true
+    opset: 18
+    tensorrt:
+      # TensorRT's standalone ONNX parser cannot import the dynamic ReduceMax
+      # axes emitted by this graph. ONNX Runtime's TensorRT EP supports it and
+      # produces the cache consumed by VINS.
+      standalone: false
+      precision: fp16
+      engine_path: onxx/yolopointv11_lightglue/trt_cache/standalone/yolopointv11_lightglue_dynamic_fp16.engine
+      ort_cache_path: onxx/yolopointv11_lightglue/trt_cache/lightglue_dynamic_n1_512_opt256
+      profiles:
+        min:
+          keypoints0: [1, 1, 2]
+          keypoints1: [1, 1, 2]
+          descriptors0: [1, 1, 128]
+          descriptors1: [1, 1, 128]
+          image_size0: [1, 2]
+          image_size1: [1, 2]
+        opt:
+          keypoints0: [1, 256, 2]
+          keypoints1: [1, 256, 2]
+          descriptors0: [1, 256, 128]
+          descriptors1: [1, 256, 128]
+          image_size0: [1, 2]
+          image_size1: [1, 2]
+        max:
+          keypoints0: [1, 512, 2]
+          keypoints1: [1, 512, 2]
+          descriptors0: [1, 512, 128]
+          descriptors1: [1, 512, 128]
+          image_size0: [1, 2]
+          image_size1: [1, 2]
+        compare:
+          keypoints0: [1, 23, 2]
+          keypoints1: [1, 37, 2]
+          descriptors0: [1, 23, 128]
+          descriptors1: [1, 37, 128]
+          image_size0: [1, 2]
+          image_size1: [1, 2]

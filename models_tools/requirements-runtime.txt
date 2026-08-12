@@ -1,0 +1,5 @@
+numpy
+onnx>=1.17
+onnxruntime-gpu>=1.22
+PyYAML>=6
+tensorrt>=10

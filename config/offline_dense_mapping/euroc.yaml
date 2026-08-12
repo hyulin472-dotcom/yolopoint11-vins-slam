@@ -1,0 +1,68 @@
+%YAML:1.0
+
+# Offline dense mapping config for tools/offline_dense_stereo_mapping.py.
+# This file is separate from euroc_stereo_imu_config.yaml so VIO runtime settings stay clean.
+
+image0_topic: "/cam0/image_raw"
+image1_topic: "/cam1/image_raw"
+
+cam0_calib: "../euroc/cam0_mei.yaml"
+cam1_calib: "../euroc/cam1_mei.yaml"
+image_width: 752
+image_height: 480
+
+body_T_cam0: !!opencv-matrix
+   rows: 4
+   cols: 4
+   dt: d
+   data: [0.0148655429818, -0.999880929698, 0.00414029679422, -0.0216401454975,
+           0.999557249008, 0.0149672133247, 0.025715529948,  -0.064676986768,
+           -0.0257744366974, 0.00375618835797, 0.999660727178, 0.00981073058949,
+           0, 0, 0, 1]
+
+body_T_cam1: !!opencv-matrix
+   rows: 4
+   cols: 4
+   dt: d
+   data: [0.0125552670891, -0.999755099723, 0.0182237714554, -0.0198435579556,
+           0.999598781151, 0.0130119051815, 0.0251588363115, 0.0453689425024,
+          -0.0253898008918, 0.0179005838253, 0.999517347078, 0.00786212447038,
+          0, 0, 0, 1]
+
+offline_dense_mapping_enable: true
+# Match the online EuRoC dense-mapping defaults. Offline stride counts synced
+# stereo pairs, while the online value counts VINS keyframes.
+offline_dense_mapping_stride: 5
+offline_dense_mapping_max_depth: 8.0
+offline_dense_mapping_min_depth: 0.5
+offline_dense_mapping_voxel_size: 0.12
+offline_dense_mapping_pixel_step: 14
+offline_dense_mapping_max_points_per_frame: 3500
+offline_dense_mapping_output_ply: "output/offline_dense_map.ply"
+offline_dense_mapping_rectification_model: "omnidir" # omnidir uses MEI xi/distortion; pinhole is a fallback
+offline_dense_mapping_rectified_focal: 460.0
+# FoundationStereo online mapping has no right-to-left consistency pass.
+# These two keys only affect the optional SGBM offline backend.
+offline_dense_mapping_lr_check: false
+offline_dense_mapping_lr_max_diff: 1.5
+offline_dense_mapping_min_disparity: 4.0
+offline_dense_mapping_max_disparity: 80.0
+offline_dense_mapping_min_gradient: 22.0
+offline_dense_mapping_save_debug: true
+offline_dense_mapping_depth_source: "foundation_stereo" # sgbm or foundation_stereo
+offline_dense_mapping_foundation_model_path: "onxx/fast_foundationstereo/20_30_48_iters_4_res_320x736.onnx"
+offline_dense_mapping_foundation_use_tensorrt: true
+offline_dense_mapping_foundation_use_cuda: true
+offline_dense_mapping_foundation_trt_cache_path: "onxx/fast_foundationstereo/trt_cache"
+offline_dense_mapping_foundation_input_width: 736
+offline_dense_mapping_foundation_input_height: 320
+# Keep disabled to match the online EuRoC default. It may still be enabled for
+# offline-only free/occupied raycasting output when desired.
+offline_dense_mapping_use_occupancy: false
+offline_dense_mapping_occupancy_output_dir: "output/offline_occupancy_map"
+offline_dense_mapping_occupancy_resolution: 0.10
+offline_dense_mapping_occupancy_pixel_step: 12
+offline_dense_mapping_occupancy_free_logodds: -0.05
+offline_dense_mapping_occupancy_occupied_logodds: 0.20
+offline_dense_mapping_occupancy_free_threshold: -0.02
+offline_dense_mapping_occupancy_occupied_threshold: 0.08

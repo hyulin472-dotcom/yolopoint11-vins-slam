@@ -1,0 +1,213 @@
+%YAML:1.0
+
+#common parameters
+#support: 1 imu 1 cam; 1 imu 2 cam: 2 cam; 
+imu: 1         
+num_of_cam: 2
+
+imu_topic: "/imu0"
+image0_topic: "/cam0/image_raw"
+image1_topic: "/cam1/image_raw"
+output_path: "output/euroc_type3/"
+
+cam0_calib: "cam0_mei.yaml"
+cam1_calib: "cam1_mei.yaml"
+image_width: 752
+image_height: 480
+
+# GPU acceleration
+use_gpu         : 0
+use_gpu_acc_flow: 0
+use_gpu_ceres   : 0
+   
+
+# Extrinsic parameter between IMU and Camera.
+estimate_extrinsic: 0   # 0  Have an accurate extrinsic parameters. We will trust the following imu^R_cam, imu^T_cam, don't change it.
+                        # 1  Have an initial guess about extrinsic parameters. We will optimize around your initial guess.
+
+body_T_cam0: !!opencv-matrix
+   rows: 4
+   cols: 4
+   dt: d
+   data: [0.0148655429818, -0.999880929698, 0.00414029679422, -0.0216401454975,
+           0.999557249008, 0.0149672133247, 0.025715529948,  -0.064676986768,
+           -0.0257744366974, 0.00375618835797, 0.999660727178, 0.00981073058949,
+           0, 0, 0, 1]
+
+body_T_cam1: !!opencv-matrix
+   rows: 4
+   cols: 4
+   dt: d
+   data: [0.0125552670891, -0.999755099723, 0.0182237714554, -0.0198435579556,
+           0.999598781151, 0.0130119051815, 0.0251588363115, 0.0453689425024,
+          -0.0253898008918, 0.0179005838253, 0.999517347078, 0.00786212447038,
+          0, 0, 0, 1]
+
+#Multiple thread support
+multiple_thread: 1
+
+#feature traker paprameters
+max_cnt: 150            # max feature number in feature tracking
+feature_tracker_type: 3 # 0: LK, 3: YOLOPointv11 + LightGlue + stereo KLT
+
+# ============================================================
+# YOLOPointv11 + LightGlue frontend
+# ============================================================
+
+# Runtime profile and execution backend
+yolopoint_lightglue_profile: indoor
+yolopoint_lightglue_backend: tensorrt
+yolopoint_lightglue_log_stats: true
+
+# Keypoint extractor model
+yolopoint_lightglue_extractor_model_path: "onxx/yolopointv11_lightglue/yolopointv11_extractor.onnx"
+yolopoint_lightglue_extractor_trt_cache_path: "onxx/yolopointv11_lightglue/trt_cache/extractor"
+yolopoint_lightglue_input_width: 752
+yolopoint_lightglue_input_height: 480
+
+# Full extractor and object detector model
+yolopoint_full_model_path: "onxx/yolopointv11_lightglue/yolopointv11_full.onnx"
+yolopoint_full_trt_cache_path: "onxx/yolopointv11_lightglue/trt_cache/full_extractor_dynamic"
+yolopoint_full_input_width: 768
+yolopoint_full_input_height: 480
+
+# LightGlue matcher model
+yolopoint_lightglue_matcher_model_path: "onxx/yolopointv11_lightglue/yolopointv11_lightglue.onnx"
+yolopoint_lightglue_matcher_trt_cache_path: "onxx/yolopointv11_lightglue/trt_cache/lightglue_dynamic_n1_512_opt256"
+
+# Keypoint extraction
+yolopoint_lightglue_score_threshold: 0.015
+yolopoint_lightglue_max_keypoints: 512
+yolopoint_lightglue_nms_radius: 4
+
+# Object detection
+yolopoint_object_detection_enable: true
+yolopoint_object_confidence_threshold: 0.25
+yolopoint_object_iou_threshold: 0.45
+yolopoint_object_max_detections: 100
+
+# Dynamic feature filtering
+yolopoint_dynamic_feature_filter_enable: true
+yolopoint_dynamic_min_static_features: 40
+yolopoint_dynamic_box_margin: 3
+
+# ============================================================
+# Online keyframe dense mapping for RViz
+# ============================================================
+
+# Master switch and output
+online_dense_mapping_enable: false # publish accumulated Fast-FoundationStereo keyframe dense cloud when true
+online_dense_mapping_topic: "~/online_dense_cloud"
+
+# FoundationStereo model and inference backend
+online_dense_mapping_foundation_model_path: "onxx/fast_foundationstereo/20_30_48_iters_4_res_320x736.onnx"
+online_dense_mapping_foundation_use_tensorrt: true
+online_dense_mapping_foundation_use_cuda: true
+online_dense_mapping_foundation_trt_cache_path: "onxx/fast_foundationstereo/trt_cache"
+online_dense_mapping_foundation_input_width: 736
+online_dense_mapping_foundation_input_height: 320
+
+# Stereo depth constraints
+online_dense_mapping_rectified_focal: 460.0
+online_dense_mapping_min_disparity: 4.0
+online_dense_mapping_max_disparity: 80.0
+online_dense_mapping_min_depth: 0.5
+online_dense_mapping_max_depth: 8.0
+online_dense_mapping_min_gradient: 22.0
+
+# Keyframe selection and point-cloud sampling
+online_dense_mapping_keyframe_stride: 5 # use every Nth VINS keyframe
+online_dense_mapping_pixel_step: 14 # sample dense pixels every N pixels
+online_dense_mapping_max_points_per_keyframe: 350
+online_dense_mapping_max_total_points: 30000
+online_dense_mapping_voxel_size: 0.12
+
+# Local radius outlier filter
+online_dense_mapping_use_local_radius_filter: true # remove isolated points inside each dense submap
+online_dense_mapping_radius_filter_radius: 0.18
+online_dense_mapping_radius_filter_min_neighbors: 2
+
+# Submap manager
+online_dense_mapping_use_submap_manager: true # RTAB-Map style: keep keyframe local clouds and assemble/fuse them for publishing
+
+# Submap quality filter
+online_dense_mapping_use_submap_quality_filter: true # reject bad dense keyframe submaps before global fusion
+online_dense_mapping_min_submap_points: 120
+online_dense_mapping_min_valid_depth_ratio: 0.01
+online_dense_mapping_max_depth_std: 4.0
+
+# Active submap window
+online_dense_mapping_use_active_submap_window: true # RTAB-Map style working-memory window for RViz publishing
+online_dense_mapping_max_active_submaps: 80
+online_dense_mapping_active_radius: 25.0
+
+# Pose-update map reassembly
+online_dense_mapping_use_pose_update_reassembly: true # update stored submap poses by timestamp and reassemble map when optimized poses are seen again
+
+# Occupancy fusion
+online_dense_mapping_use_occupancy_fusion: true # RTAB-Map style hit-count/log-odds occupied voxel filtering
+online_dense_mapping_occupancy_min_hits: 2
+online_dense_mapping_occupancy_prob_hit: 0.70
+online_dense_mapping_occupancy_threshold: 0.65
+
+
+min_dist: 30            # min distance between two features 
+freq: 10                # frequence (Hz) of publish tracking result. At least 10Hz for good estimation. If set 0, the frequence will be same as raw image 
+F_threshold: 1.0        # ransac threshold (pixel)
+show_track: 1           # publish tracking image as topic
+flow_back: 1            # perform forward and backward optical flow to improve feature tracking accuracy
+
+#optimization parameters
+max_solver_time: 0.04  # max solver itration time (ms), to guarantee real time
+max_num_iterations: 8   # max solver itrations, to guarantee real time
+use_kitti_z_motion_prior: false # weak adjacent-frame z increment prior for KITTI stereo-only odometry
+kitti_z_motion_prior_weight: 0.3
+keyframe_parallax: 10.0 # keyframe selection threshold (pixel)
+
+#imu parameters       The more accurate parameters you provide, the better performance
+acc_n: 0.1          # accelerometer measurement noise standard deviation. 
+gyr_n: 0.01         # gyroscope measurement noise standard deviation.     
+acc_w: 0.001        # accelerometer bias random work noise standard deviation.  
+gyr_w: 0.0001       # gyroscope bias random work noise standard deviation.     
+g_norm: 9.81007     # gravity magnitude
+
+#unsynchronization parameters
+estimate_td: 0                      # online estimate time offset between camera and imu
+td: 0.0                             # initial value of time offset. unit: s. readed image clock + td = real image clock (IMU clock)
+
+#loop closure parameters
+
+# Independent RTAB-Map-inspired loop closure (no RTAB-Map dependency)
+loop_closure_enable: false
+loop_closure_max_features: 800
+loop_closure_stm_size: 30
+loop_closure_max_database_size: 2000
+loop_closure_appearance_threshold: 0.18
+loop_closure_match_ratio: 0.75
+loop_closure_temporal_consistency: 2
+loop_closure_candidate_window: 4
+loop_closure_min_matches: 30
+loop_closure_min_inliers: 20
+loop_closure_min_inlier_ratio: 0.35
+loop_closure_min_inlier_spread: 0.12
+loop_closure_pnp_iterations: 150
+loop_closure_pnp_reprojection_error: 3.0
+loop_closure_min_depth: 0.2
+loop_closure_max_depth: 30.0
+loop_closure_stereo_max_error: 0.08
+loop_closure_max_translation: 20.0
+loop_closure_max_rotation_deg: 60.0
+loop_closure_pose_graph_iterations: 30
+loop_closure_max_pending_keyframes: 5
+loop_closure_min_interval: 15
+loop_closure_neighbor_edges: 4
+loop_closure_allow_stereo_fallback: true
+loop_closure_odom_translation_weight: 5.0
+loop_closure_odom_rotation_weight: 10.0
+loop_closure_loop_translation_weight: 8.0
+loop_closure_loop_rotation_weight: 12.0
+loop_closure_graph_max_translation_error: 2.0
+loop_closure_graph_max_rotation_error_deg: 20.0
+loop_closure_dual_max_translation_error: 1.5
+loop_closure_dual_max_rotation_error_deg: 10.0
+loop_closure_gravity_weight: 50.0
