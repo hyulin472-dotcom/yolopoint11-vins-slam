@@ -90,23 +90,9 @@ The project combines a modified version of the
 framework of VINS-Fusion. Our implementation extends that combination into a
 complete ROS 2 stereo SLAM pipeline:
 
-```mermaid
-flowchart LR
-    L[Left image] --> Y[YOLOPoint11<br/>keypoints, descriptors, objects]
-    R[Right image] --> S[Stereo KLT and<br/>geometry filtering]
-    Y --> G[LightGlue temporal matching]
-    Y --> S
-    I[IMU, optional] --> V[VINS-Fusion<br/>sliding-window estimator]
-    G --> V
-    S --> V
-    Y --> D[Dynamic-feature filtering]
-    D --> V
-    V --> P[Odometry and trajectory]
-    V --> C[Independent loop closure]
-    L --> M[Fast-FoundationStereo<br/>dense mapping]
-    R --> M
-    V --> M
-```
+<p align="center">
+  <img src="figures/system_overview.png" width="100%" alt="YOLOPoint11-VINS-SLAM system overview">
+</p>
 
 The processing sequence is:
 
