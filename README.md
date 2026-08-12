@@ -584,7 +584,9 @@ YOLOPoint implementation. Preserve upstream copyright notices and verify the
 redistribution terms of every ONNX model before publishing a GitHub release or
 model asset.
 
-Contributions and reproducible benchmark reports are welcome. When reporting a
-problem, include the operating system, ROS version, ONNX Runtime provider,
-CUDA/cuDNN/TensorRT versions when applicable, GPU model, configuration file,
-and the complete error log.
+We welcome code contributions and reproducible benchmark results. If you encounter
+an issue, please provide your operating system, ROS version, ONNX Runtime provider,
+GPU model, configuration file, and full error log, along with the CUDA, cuDNN, and
+TensorRT versions when relevant.
+
+
